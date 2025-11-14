@@ -756,7 +756,47 @@
     "iterations": [
       {
         "iteration_id": 1,
-        "method": "KDLS-QLoRA  –  Kronecker-Diagonal Line Search.\n\n1.  Observation: for a single LoRA adapter the true Hessian w.r.t.\n    θ=vec(Bᵀ⊙A) can be well-approximated by the Kronecker product   H≈G⊗X   where\n      X = E[ x xᵀ ]   (input cov.) and   G = E[ g gᵀ ]   (output-grad cov.).\n    For QLoRA fine-tuning both X (rank ≤64) and G (rank ≤64) are tiny.\n\n2.  We maintain running (β=0.95) estimates X̄ , Ḡ **without any extra passes**:\n      • during the normal backward pass we already hold layer input x∈ℝ^{d}  and upstream gradient g∈ℝ^{d};\n      • we perform two fused outer-product reductions per adapter:\n            X̄ ← βX̄ + (1-β)·(x xᵀ)\n            Ḡ ← βḠ + (1-β)·(g gᵀ)\n      Each costs 64²≈4 kFLOPs, <0.01 % step time on a 0.6 B model.\n\n3.  Curvature along Adam’s pre-conditioned update  Δθ  is then\n        q = Δθᵀ (Ḡ⊗X̄) Δθ  =  tr( BΔ ⊤ Ḡ BΔ ) · tr( AΔ ⊤ X̄ AΔ ),\n    which collapses to two r×r traces—computed by two tiny matmuls.\n\n4.  Form the quadratic loss predictor\n        ℓ̂₁ = ℓ₀ + ⟨g,Δθ⟩ + ½·q .\n\n5.  Closed-form Polyak step   α̂ = clamp( (-s₁+√(s₁²-2qℓ₀) ) /(q+ε) , 0, 2).\n\n6.  The scalar is EMA-smoothed and safeguarded exactly as in ZCLS, but **no fallback clipping is observed in practice**.\n\n7.  Memory: two 64×64 buffers per adapter (~33 kB for the whole model)."
+        "method": "KDLS-QLoRA  –  Kronecker-Diagonal Line Search.\n\n1.  Observation: for a single LoRA adapter the true Hessian w.r.t.\n    θ=vec(Bᵀ⊙A) can be well-approximated by the Kronecker product   H≈G⊗X   where\n      X = E[ x xᵀ ]   (input cov.) and   G = E[ g gᵀ ]   (output-grad cov.).\n    For QLoRA fine-tuning both X (rank ≤64) and G (rank ≤64) are tiny.\n\n2.  We maintain running (β=0.95) estimates X̄ , Ḡ **without any extra passes**:\n      • during the normal backward pass we already hold layer input x∈ℝ^{d}  and upstream gradient g∈ℝ^{d};\n      • we perform two fused outer-product reductions per adapter:\n            X̄ ← βX̄ + (1-β)·(x xᵀ)\n            Ḡ ← βḠ + (1-β)·(g gᵀ)\n      Each costs 64²≈4 kFLOPs, <0.01 % step time on a 0.6 B model.\n\n3.  Curvature along Adam’s pre-conditioned update  Δθ  is then\n        q = Δθᵀ (Ḡ⊗X̄) Δθ  =  tr( BΔ ⊤ Ḡ BΔ ) · tr( AΔ ⊤ X̄ AΔ ),\n    which collapses to two r×r traces—computed by two tiny matmuls.\n\n4.  Form the quadratic loss predictor\n        ℓ̂₁ = ℓ₀ + ⟨g,Δθ⟩ + ½·q .\n\n5.  Closed-form Polyak step   α̂ = clamp( (-s₁+√(s₁²-2qℓ₀) ) /(q+ε) , 0, 2).\n\n6.  The scalar is EMA-smoothed and safeguarded exactly as in ZCLS, but **no fallback clipping is observed in practice**.\n\n7.  Memory: two 64×64 buffers per adapter (~33 kB for the whole model).",
+        "experimental_design": {
+          "experiment_summary": "We will fine-tune a 4-bit-quantised Qwen3-0.6B language model on the GSM8K training split with a LoRA adapter of rank r=64.  Two optimisation rules are compared: (1) the proposed KDLS-QLoRA, which augments the usual Adam pre-conditioner with a Kronecker-factored 64×64 curvature estimate for every adapter and performs a closed-form Polyak line-search each step; and (2) a strong AdamW baseline with cosine learning-rate decay.  Both methods are run for 3 epochs, batch-size 32 (8×4 gradient accumulation) in bfloat16 on one NVIDIA A100-80GB GPU.  KDLS maintains running covariances of the layer inputs and output gradients, updated by two fused outer-products during the backward pass, adding <0.01 % extra FLOPs and ~33 kB model memory.  At every step the quadratic loss predictor ℓ̂₁=ℓ₀+⟨g,Δθ⟩+½q is formed, the optimal step α̂ is solved analytically, clamped to [0,2] and EMA-smoothed before scaling the Adam update.  After each epoch we compute exact-match accuracy on the GSM8K dev set; we also log divergence rate (loss or grad exploding), wall-clock time and GPU energy.  Five random seeds are used for statistical significance.",
+          "evaluation_metrics": [
+            "GSM8K Dev Exact-Match Accuracy",
+            "Divergence Rate",
+            "Training Wall-Time",
+            "GPU Energy Consumption",
+            "GSM8K dev exact-match accuracy"
+          ],
+          "proposed_method": "KDLS-QLoRA (Kronecker-Diagonal Line Search)\nObjective: achieve block-diagonal curvature awareness for LoRA fine-tuning with almost zero overhead.\nTheory: For a LoRA adapter with parameters A∈ℝ^{d×r}, B∈ℝ^{r×d}, the Hessian w.r.t θ=vec(Bᵀ⊙A) is well approximated by the Kronecker product H≈G⊗X, where X=E[x xᵀ] is the layer-input covariance and G=E[g gᵀ] the upstream-gradient covariance.  With r≤64 these are tiny.\nAlgorithm:\n1. During the backward pass, capture current layer input x and gradient g (already resident in GPU memory).\n2. Update running statistics per adapter:\n   X̄←βX̄+(1−β)·x xᵀ ,   Ḡ←βḠ+(1−β)·g gᵀ   (β≈0.95).\n3. Let Δθ be Adam-preconditioned gradient.  Curvature along Δθ is q = tr(BΔᵀ Ḡ BΔ) · tr(AΔᵀ X̄ AΔ).\n4. Form quadratic loss predictor ℓ̂₁ and solve for optimal Polyak step α̂ = clamp( (−s₁+√(s₁²−2qℓ₀))/(q+ε) , 0, 2) where s₁=⟨g,Δθ⟩.\n5. Apply update θ←θ−α̂Δθ.  Smooth α̂ with an EMA and safeguard exactly as in ZCLS; no fallback clipping needed empirically.\n6. Complexity: +2 outer products (≈4 kFLOPs) and two 64×64 matmuls per adapter each iteration; memory +2×r² buffers.\nImplementation: A small PyTorch patch that registers LoRA adapters, allocates X̄,Ḡ buffers, performs fused outer-product reductions in CUDA kernels, and overrides the step() function of AdamW to include KDLS logic.",
+          "comparative_methods": [
+            "AdamW + Cosine Decay"
+          ],
+          "models_to_use": [
+            "Qwen3-0.6B (0.6 B params)"
+          ],
+          "datasets_to_use": [
+            "gsm8k"
+          ],
+          "hyperparameters_to_search": {
+            "learning_rate (AdamW)": "1e-5-5e-5",
+            "beta (covariance EMA)": "0.90-0.99",
+            "polyak_max_scale": "1.0-2.0",
+            "lora_rank": "32,64"
+          }
+        },
+        "experiment_runs": [
+          {
+            "run_id": "proposed-iter1-Qwen3-0.6B-0.6-B-params-gsm8k",
+            "method_name": "proposed",
+            "model_name": "Qwen3-0.6B (0.6 B params)",
+            "dataset_name": "gsm8k"
+          },
+          {
+            "run_id": "comparative-1-iter1-Qwen3-0.6B-0.6-B-params-gsm8k",
+            "method_name": "comparative-1",
+            "model_name": "Qwen3-0.6B (0.6 B params)",
+            "dataset_name": "gsm8k"
+          }
+        ]
       }
     ]
   }
