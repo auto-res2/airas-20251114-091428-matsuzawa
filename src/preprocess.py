@@ -25,8 +25,9 @@ def _format(ex: dict) -> Tuple[str, str]:
 def get_dataloaders(cfg, tok: PreTrainedTokenizerBase):
     """Return training & validation dataloaders according to *cfg*."""
     name = cfg.dataset.name
-    ds_tr = load_dataset(name, split=cfg.dataset.splits.train, cache_dir=CACHE_DIR)
-    ds_val = load_dataset(name, split=cfg.dataset.splits.validation, cache_dir=CACHE_DIR)
+    config = getattr(cfg.dataset, "config", None)
+    ds_tr = load_dataset(name, config, split=cfg.dataset.splits.train, cache_dir=CACHE_DIR)
+    ds_val = load_dataset(name, config, split=cfg.dataset.splits.validation, cache_dir=CACHE_DIR)
     max_len = cfg.dataset.text_max_length
 
     def _tok_single(ex):

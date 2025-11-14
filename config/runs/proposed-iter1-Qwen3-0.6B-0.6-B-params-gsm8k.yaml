@@ -23,6 +23,7 @@ model:
 
 dataset:
   name: gsm8k
+  config: main
   splits:
     train: train
     validation: test             # GSM8K has no official dev; use test as dev here

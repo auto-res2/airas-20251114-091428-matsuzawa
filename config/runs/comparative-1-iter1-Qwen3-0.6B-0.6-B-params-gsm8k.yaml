@@ -14,6 +14,7 @@ model:
 
 dataset:
   name: gsm8k
+  config: main
   splits:
     train: train
     validation: test
