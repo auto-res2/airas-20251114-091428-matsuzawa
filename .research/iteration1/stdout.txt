@@ -1,0 +1,6 @@
+=== [UV SYNC] Start at Fri Nov 14 10:43:02 AM UTC 2025 ===
+=== [UV SYNC] Finished successfully at Fri Nov 14 10:43:06 AM UTC 2025 ===
+=== [TRIAL RUN] Start for proposed-iter1-Qwen3-0.6B-0.6-B-params-gsm8k at Fri Nov 14 10:43:06 AM UTC 2025 ===
+[main] launch → /home/toma/pt80-1-a-29/_work/airas-20251114-091428-matsuzawa/airas-20251114-091428-matsuzawa/.venv/bin/python3 -u -m src.train run=proposed-iter1-Qwen3-0.6B-0.6-B-params-gsm8k mode=trial wandb.mode=disabled optuna.n_trials=0 training.epochs=1 training.log_every_steps=1 results_dir=.research/iteration1
+=== [TRIAL RUN] PASSED for proposed-iter1-Qwen3-0.6B-0.6-B-params-gsm8k at Fri Nov 14 10:44:21 AM UTC 2025 ===
+
