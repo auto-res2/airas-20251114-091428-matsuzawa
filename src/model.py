@@ -27,7 +27,9 @@ def _attach_kdls_buffers(module: nn.Module, rank: int, beta: float):
     def _fwd(mod, inp, _out):  # noqa: ANN001
         x = inp[0].detach().float().view(-1, inp[0].shape[-1])  # (B,d_in)
         with torch.no_grad():
-            proj = x @ mod.lora_A.weight.T  # (B,r)   A: (r,d_in)
+            # Access the adapter module from ModuleDict
+            lora_A = mod.lora_A["default"] if isinstance(mod.lora_A, nn.ModuleDict) else mod.lora_A
+            proj = x @ lora_A.weight.T  # (B,r)   A: (r,d_in)
             cov = (proj.T @ proj) / proj.size(0)  # (r,r)
             mod.kdls_X.mul_(mod.kdls_beta).add_(cov, alpha=1 - mod.kdls_beta)
 
@@ -35,7 +37,9 @@ def _attach_kdls_buffers(module: nn.Module, rank: int, beta: float):
     def _bwd(mod, _gin, gout):  # noqa: ANN001
         g = gout[0].detach().float().view(-1, gout[0].shape[-1])  # (B,d_out)
         with torch.no_grad():
-            proj = g @ mod.lora_B.weight  # (B,r)   B: (d_out,r)
+            # Access the adapter module from ModuleDict
+            lora_B = mod.lora_B["default"] if isinstance(mod.lora_B, nn.ModuleDict) else mod.lora_B
+            proj = g @ lora_B.weight  # (B,r)   B: (d_out,r)
             cov = (proj.T @ proj) / proj.size(0)  # (r,r)
             mod.kdls_G.mul_(mod.kdls_beta).add_(cov, alpha=1 - mod.kdls_beta)
 
@@ -157,8 +161,11 @@ class KDLSAdamW(torch.optim.Optimizer):
         """Compute q = tr(BΔᵀ Ḡ BΔ) · tr(AΔᵀ X̄ AΔ)."""
         q = 0.0
         for mod in self.lora_mods:
-            Aupd = getattr(mod.lora_A.weight, "grad_precond", None)
-            Bupd = getattr(mod.lora_B.weight, "grad_precond", None)
+            # Access the adapter module from ModuleDict
+            lora_A = mod.lora_A["default"] if isinstance(mod.lora_A, nn.ModuleDict) else mod.lora_A
+            lora_B = mod.lora_B["default"] if isinstance(mod.lora_B, nn.ModuleDict) else mod.lora_B
+            Aupd = getattr(lora_A.weight, "grad_precond", None)
+            Bupd = getattr(lora_B.weight, "grad_precond", None)
             if Aupd is None or Bupd is None:
                 continue
             XA = mod.kdls_X  # (r,r) – float32
