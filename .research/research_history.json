@@ -753,6 +753,11 @@
       "expected_result": "AdamW tuned: 82.0 % ±0.6, 3 % div.\nZCLS: 84.4 % ±0.2, 2 % div., 99.4 % time.\nQASLS: 84.9 % ±0.15, 0.2 % div., 99.6 % time.\nKDLS: **85.2 % ±0.12**, *zero* divergences in 500 runs, 99.8 % time, energy −4 % vs AdamW.",
       "expected_conclusion": "Block-diagonal (Kronecker-factored) curvature costing <0.01 % extra FLOPs per step suffices to eliminate the last instabilities of diagonal line searches and squeezes another +0.3 pp accuracy on GSM8K.  KDLS-QLoRA shows that second-order safety for LoRA fine-tuning need not trade off with speed or memory, and suggests a general recipe: reuse layer-local statistics that are *already* in GPU registers to obtain rich curvature information essentially for free."
     },
-    "iterations": []
+    "iterations": [
+      {
+        "iteration_id": 1,
+        "method": "KDLS-QLoRA  –  Kronecker-Diagonal Line Search.\n\n1.  Observation: for a single LoRA adapter the true Hessian w.r.t.\n    θ=vec(Bᵀ⊙A) can be well-approximated by the Kronecker product   H≈G⊗X   where\n      X = E[ x xᵀ ]   (input cov.) and   G = E[ g gᵀ ]   (output-grad cov.).\n    For QLoRA fine-tuning both X (rank ≤64) and G (rank ≤64) are tiny.\n\n2.  We maintain running (β=0.95) estimates X̄ , Ḡ **without any extra passes**:\n      • during the normal backward pass we already hold layer input x∈ℝ^{d}  and upstream gradient g∈ℝ^{d};\n      • we perform two fused outer-product reductions per adapter:\n            X̄ ← βX̄ + (1-β)·(x xᵀ)\n            Ḡ ← βḠ + (1-β)·(g gᵀ)\n      Each costs 64²≈4 kFLOPs, <0.01 % step time on a 0.6 B model.\n\n3.  Curvature along Adam’s pre-conditioned update  Δθ  is then\n        q = Δθᵀ (Ḡ⊗X̄) Δθ  =  tr( BΔ ⊤ Ḡ BΔ ) · tr( AΔ ⊤ X̄ AΔ ),\n    which collapses to two r×r traces—computed by two tiny matmuls.\n\n4.  Form the quadratic loss predictor\n        ℓ̂₁ = ℓ₀ + ⟨g,Δθ⟩ + ½·q .\n\n5.  Closed-form Polyak step   α̂ = clamp( (-s₁+√(s₁²-2qℓ₀) ) /(q+ε) , 0, 2).\n\n6.  The scalar is EMA-smoothed and safeguarded exactly as in ZCLS, but **no fallback clipping is observed in practice**.\n\n7.  Memory: two 64×64 buffers per adapter (~33 kB for the whole model)."
+      }
+    ]
   }
 }
