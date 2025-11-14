@@ -374,6 +374,7 @@ def _hydra_entry(cfg):  # pragma: no cover – CLI entry point
         raise FileNotFoundError(f"Unknown run-id: {cfg.run}")
 
     run_cfg = OmegaConf.load(run_cfg_path)
+    OmegaConf.set_struct(cfg, False)
     merged = OmegaConf.merge(cfg, run_cfg)
     merged.run_id = run_cfg.get("run_id", cfg.run)
     train(merged)
