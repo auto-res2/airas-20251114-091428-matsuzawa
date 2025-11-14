@@ -6,5 +6,82 @@
     "GSM8K learning rate",
     "adaptive learning rate",
     "transformer hyperparameter tuning"
+  ],
+  "research_study_list": [
+    {
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs"
+    },
+    {
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs"
+    },
+    {
+      "title": "QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models"
+    },
+    {
+      "title": "QuanTA: Efficient High-Rank Fine-Tuning of LLMs with Quantum-Informed Tensor Adaptation"
+    },
+    {
+      "title": "Evaluating Quantized Large Language Models"
+    },
+    {
+      "title": "AutoLRS: Automatic Learning-Rate Schedule by Bayesian Optimization on the Fly"
+    },
+    {
+      "title": "Reverse engineering learned optimizers reveals known and novel mechanisms"
+    },
+    {
+      "title": "Mechanic: A Learning Rate Tuner"
+    },
+    {
+      "title": "MoMo: Momentum Models for Adaptive Learning Rates"
+    },
+    {
+      "title": "Where Do Large Learning Rates Lead Us?"
+    },
+    {
+      "title": "AutoLRS: Automatic Learning-Rate Schedule by Bayesian Optimization on the Fly"
+    },
+    {
+      "title": "Where Do Large Learning Rates Lead Us?"
+    },
+    {
+      "title": "AdaScale SGD: A User-Friendly Algorithm for Distributed Training"
+    },
+    {
+      "title": "Scaling Laws and Compute-Optimal Training Beyond Fixed Training Durations"
+    },
+    {
+      "title": "The Stability-Efficiency Dilemma: Investigating Sequence Length Warmup for Training GPT Models"
+    },
+    {
+      "title": "AutoLRS: Automatic Learning-Rate Schedule by Bayesian Optimization on the Fly"
+    },
+    {
+      "title": "MoMo: Momentum Models for Adaptive Learning Rates"
+    },
+    {
+      "title": "Prodigy: An Expeditiously Adaptive Parameter-Free Learner"
+    },
+    {
+      "title": "Multirate Training of Neural Networks"
+    },
+    {
+      "title": "Multirate Training of Neural Networks"
+    },
+    {
+      "title": "Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer"
+    },
+    {
+      "title": "Towards Learning Universal Hyperparameter Optimizers with Transformers"
+    },
+    {
+      "title": "Improving Transformer Optimization Through Better Initialization "
+    },
+    {
+      "title": "Dynamic Layer Tying for Parameter-Efficient Transformers"
+    },
+    {
+      "title": "Meta-learning to Improve Pre-training"
+    }
   ]
 }
