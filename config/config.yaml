@@ -1,0 +1,56 @@
+# config/config.yaml – global Hydra defaults
+
+defaults:
+  - override hydra/job_logging: disabled
+  - override hydra/hydra_logging: disabled
+
+run: null      # supplied on CLI
+results_dir: ./results
+mode: full     # full | trial
+
+wandb:
+  entity: gengaru617-personal
+  project: 2025-11-14
+  mode: online  # auto-overridden in trial-mode
+
+optuna:
+  n_trials: 0
+  direction: maximize
+  search_space: {}
+
+training:
+  seed: 42
+  epochs: 1
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  optimizer:
+    learning_rate: 1.0
+    betas: [0.9, 0.999]
+    weight_decay: 0.0
+  clipping:
+    max_grad_norm: 1.0
+  log_every_steps: 10
+
+# model & dataset sections are provided by run-specific YAMLs at runtime
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+  sweep:
+    dir: ./multirun
+    subdir: ${hydra.job.num}
+  job:
+    chdir: False
+    env_set:
+      WANDB__SERVICE_WAIT: "300"    # allow slow network
+      TOKENIZERS_PARALLELISM: "false"
+      HF_HOME: ./.cache/
+      HF_DATASETS_CACHE: ./.cache/
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TRANSFORMERS_NO_ADVISORY_WARNINGS: "1"
+      CUDA_LAUNCH_BLOCKING: "0"
+  job_logging:
+    formatters:
+      simple:
+        format: "[%(asctime)s][%(levelname)s] %(name)s: %(message)s"

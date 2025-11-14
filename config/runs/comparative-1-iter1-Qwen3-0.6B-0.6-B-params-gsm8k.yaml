@@ -1,0 +1,58 @@
+run_id: comparative-1-iter1-Qwen3-0.6B-0.6-B-params-gsm8k
+method: AdamW-baseline
+model:
+  name: Qwen/Qwen3-0.6B
+  architecture: causal-transformer
+  quantization:
+    scheme: nf4
+    bits: 4
+  adapter:
+    type: lora
+    rank: 64
+    alpha: 32
+    dropout: 0.05
+
+dataset:
+  name: gsm8k
+  splits:
+    train: train
+    validation: test
+  text_max_length: 512
+  preprocessing:
+    strip_whitespace: true
+    add_eos_token: true
+
+training:
+  batch_size: 32                 # effective (micro=4, grad_acc=8)
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  epochs: 3
+  precision: bf16
+  optimizer:
+    type: adamw
+    betas: [0.9, 0.999]
+    weight_decay: 0.01
+  lr_scheduler:
+    type: cosine
+    warmup_ratio: 0.05
+  clipping:
+    max_grad_norm: 1.0
+  seed: 42
+  log_every_steps: 10
+  save_every_epochs: 1
+
+optuna:
+  n_trials: 40
+  direction: maximize            # GSM8K accuracy
+  search_space:
+    training.optimizer.learning_rate:
+      type: loguniform
+      low: 1.0e-5
+      high: 5.0e-5
+    training.optimizer.weight_decay:
+      type: loguniform
+      low: 1.0e-4
+      high: 1.0e-1
+    adapter.rank:
+      type: categorical
+      choices: [32, 64]

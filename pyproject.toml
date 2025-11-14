@@ -1,1 +1,21 @@
-# Please list the required python packages.
+[project]
+name = "kdls_qlora_experiments"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.40.0",
+    "bitsandbytes>=0.43.0",
+    "peft>=0.8.2",
+    "datasets>=2.18.0",
+    "hydra-core>=1.3.2",
+    "omegaconf>=2.3.0",
+    "wandb>=0.16.0",
+    "optuna>=3.5.0",
+    "matplotlib>=3.8.3",
+    "seaborn>=0.13.2",
+    "scipy>=1.11.4",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.4.0",
+    "tqdm>=4.66.2",
+]
